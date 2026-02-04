@@ -101,16 +101,17 @@ if __name__ == "__main__":
     if choice == "1":
         # Scan and Save
         print("Calculating hashes...")
-        data = scan_directory('.') # Scanning current folder
+        data = scan_directory('.') 
         save_baseline(data)
         
     elif choice == "2":
-        # Load, Scan, and Compare
-        baseline_data = load_baseline()
-        
-        if not baseline_data:
-            print("[-] No baseline found. Run mode 1 first.")
+        # Check if the file actually exists first
+        if not os.path.exists("baseline.json"):
+             print("[-] 'baseline.json' not found. Please run Mode 1 first.")
         else:
+            # Load the baseline (even if it's empty)
+            baseline_data = load_baseline()
+            
             print("Scanning current files...")
             current_data = scan_directory('.')
             
