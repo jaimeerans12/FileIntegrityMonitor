@@ -57,3 +57,32 @@ In security engineering, the goal is to discover a breach as quickly as possible
 
 ### 🛠️ Software Supply Chain Security
 This project explores how developers can verify that their build environment remains "clean." By baseline-testing a project directory before a deployment, we ensure that no malicious artifacts or "extra" files have been injected into the software lifecycle.
+
+## 3. Technical Architecture
+
+Sentinel-FIM is built to be lightweight and dependency-free, relying on Python's standard library to ensure ease of deployment across different environments.
+
+### 3.1 Core Components
+
+* **Language:** Python 3.x
+    * *Reasoning:* Selected for its robust standard library support, specifically for file system traversal and cryptographic operations, without needing external packages.
+* **Hashing Algorithm:** SHA-256
+    * *Reasoning:* Unlike MD5 or SHA-1, which have known collision vulnerabilities, SHA-256 (part of the SHA-2 family) offers a high degree of collision resistance while remaining performant for file integrity checks.
+* **File System Handling:** `pathlib` Library
+    * *Reasoning:* Used for object-oriented filesystem paths. It provides cross-platform compatibility, automatically handling the differences between macOS (Unix) forward slashes and Windows backslashes.
+
+### 3.2 Data Flow & Storage
+
+1.  **Baseline Generation:**
+    The tool recursively scans the target directory using a Depth-First Search (DFS) approach. It computes the SHA-256 hash of every file and stores the `filepath:hash` key-value pairs in a local database (e.g., `baseline.txt` or `.json`).
+    
+2.  **Monitoring Logic:**
+    During the monitoring phase, the tool rescans the directory and compares the current state against the stored baseline.
+    * **Match:** File is unchanged.
+    * **Mismatch:** File content has been modified (**Integrity Violation**).
+    * **Key Missing in Baseline:** New file detected (**Intrusion Alert**).
+    * **Key Missing in Current Scan:** File deleted (**Availability Issue**).
+
+### 3.3 System-Specific Considerations (macOS)
+
+* **Metadata Exclusion:** The architecture explicitly ignores OS-generated metadata files, specifically `.DS_Store`. These files change frequently based on user UI interactions (e.g., resizing a window) and would cause "False Positive" alerts if included in the integrity check.
