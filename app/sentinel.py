@@ -1,8 +1,8 @@
-import hashlib
+import hashlib # For generating the hashes
 import os
 import json
-import argparse  # <--- New import for handling arguments
-from pathlib import Path
+import argparse # You don't need this if you only need it to run inside the same folder, but any modifications to the script would be a security risk
+from pathlib import Path # This should be multiplatform compatible
 
 # --- CORE FUNCTIONS ---
 
