@@ -11,6 +11,7 @@ A security tool developed in Python to monitor and detect unauthorized modificat
 3. [Technical Architecture](#3-technical-architecture)
     * 3.1 [Hashing Strategy (SHA-256)](#31-hashing-strategy-sha-256)
     * 3.2 [Data Persistence](#32-data-persistence)
+    * 3.3 [System-Specific Considerations (macOS)](#33-system-specific-considerations-macos)
 4. [How It Works](#4-how-it-works)
     * 4.1 [Baseline Mode](#41-baseline-mode)
     * 4.2 [Monitor Mode](#42-monitor-mode)
