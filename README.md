@@ -20,8 +20,6 @@ A security tool developed in Python to monitor and detect unauthorized modificat
     * 6.1 [macOS System Files (.DS_Store)](#61-macos-system-files-ds_store)
     * 6.2 [Permission Handling](#62-permission-handling)
 7. [Installation & Usage](#7-installation--usage)
-8. [Future Roadmap](#8-future-roadmap)
-9. [Author Info](#9-author-info)
 
 ---
 
@@ -135,3 +133,43 @@ graph TD
     J -- Mismatch --> L[ALERT: Modified]
     J -- New File --> M[ALERT: New File]
     J -- Missing --> N[ALERT: Deleted]
+```
+
+## 6. Challenges & Edge Cases
+
+During the development of Sentinel-FIM, several engineering challenges were addressed to ensure reliability and prevent false positives.
+
+### 6.1 The "Recursion" Bug
+**The Issue:** Early versions of the tool would save `baseline.json` inside the target directory. On the next scan, the tool would detect `baseline.json` as a "New File," creating a new hash for it, which would modify the file again, leading to an infinite loop of alerts.
+**The Fix:** Added an internal **Ignore List** that explicitly excludes the tool's own configuration files (`baseline.json`, `sentinel.py`) from the hashing process.
+
+### 6.2 OS-Specific Metadata (.DS_Store)
+**The Issue:** On macOS, the Finder creates hidden `.DS_Store` files to store folder view settings (icon position, window size). These files change frequently based on user interaction, not security events.
+**The Fix:** Implemented a filename filter in the directory crawler to ignore `.DS_Store`. This significantly reduced **False Positives**, ensuring alerts are only triggered by actual content changes.
+
+### 6.3 Large File Handling (Memory Management)
+**The Issue:** Attempting to hash a large file (e.g., 2GB ISO) by reading `f.read()` loads the entire file into RAM, which could crash the script on low-memory systems.
+**The Fix:** Implemented **Chunked Reading**. The hashing engine reads files in 4KB (4096 byte) blocks. This allows the tool to process files of any size while maintaining a constant, low memory footprint.
+
+## 7. Installation & Usage
+
+Sentinel-FIM is designed to be plug-and-play. It relies on the Python Standard Library, meaning no external `pip install` commands are required.
+
+### Prerequisites
+* **Python 3.6+** (Required for `pathlib` support).
+* A terminal or command prompt.
+
+### Installation
+1.  Clone the repository to your local machine:
+    ```bash
+    git clone [https://github.com/jaimeerans12/FileIntegrityMonitor.git](https://github.com/jaimeerans12/FileIntegrityMonitor.git)
+    ```
+2.  Navigate to the project directory:
+    ```bash
+    cd FileIntegrityMonitor
+    ```
+
+### How to Run
+Execute the script directly using Python:
+```bash
+python3 sentinel.py
