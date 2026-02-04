@@ -3,8 +3,6 @@ import os
 import json
 from pathlib import Path
 
-# --- CORE FUNCTIONS ---
-
 def calculate_file_hash(filepath):
     """
     Calculates the SHA-256 hash of a file.
