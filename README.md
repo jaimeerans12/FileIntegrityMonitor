@@ -87,3 +87,25 @@ Sentinel-FIM is built to be lightweight and dependency-free, relying on Python's
 ### 3.3 System-Specific Considerations (macOS)
 
 * **Metadata Exclusion:** The architecture explicitly ignores OS-generated metadata files, specifically `.DS_Store`. These files change frequently based on user UI interactions (e.g., resizing a window) and would cause "False Positive" alerts if included in the integrity check.
+
+## 4. How It Works
+
+Sentinel-FIM operates in two distinct modes, mimicking the workflow of enterprise security tools like Tripwire or OSSEC in a simple educational version.
+
+### 4.1 Baseline Mode (Initialization)
+This mode is designed to be run when the system is in a **"Known Good State"** (e.g., immediately after a fresh install or a verified deployment).
+
+1.  **Traversal:** The script uses `os.walk()` to crawl the target directory tree.
+2.  **Fingerprinting:** For every file found (excluding those in the ignore list), the engine calculates a SHA-256 hash.
+3.  **Serialization:** These path-hash pairs are stored in a dictionary and exported to `baseline.json`.
+    * *Security Note:* This file acts as the "Golden Image." Any future deviation from this file is considered an anomaly.
+
+### 4.2 Monitor Mode (Verification)
+This mode is the auditing phase. It answers the question: *"Has anything changed since the baseline was created?"*
+
+1.  **Re-Scanning:** The script performs a fresh scan of the directory, calculating new hashes for all current files.
+2.  **Comparison Logic:** It compares the "Current State" against the loaded "Baseline."
+3.  **Alerting:**
+    * **[MODIFIED]:** The file exists in both states, but the hashes differ. (Critical: potential tampering).
+    * **[NEW]:** A file exists now that was not in the baseline. (Warning: potential malware drop or unauthorized script).
+    * **[DELETED]:** A file was in the baseline but is missing now. (Warning: potential data loss or cleanup attempt).
