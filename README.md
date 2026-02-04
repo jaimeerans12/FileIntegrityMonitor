@@ -165,7 +165,7 @@ Sentinel-FIM is designed to be plug-and-play. It relies on the Python Standard L
 ### Installation
 1.  Clone the repository to your local machine:
     ```bash
-    git clone [https://github.com/jaimeerans12/FileIntegrityMonitor.git](https://github.com/jaimeerans12/FileIntegrityMonitor.git)
+    git clone https://github.com/jaimeerans12/FileIntegrityMonitor.git
     ```
 2.  Navigate to the project directory:
     ```bash
