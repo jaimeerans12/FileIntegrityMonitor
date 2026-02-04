@@ -169,7 +169,7 @@ Sentinel-FIM is designed to be plug-and-play. It relies on the Python Standard L
     ```
 2.  Navigate to the project directory:
     ```bash
-    cd FileIntegrityMonitor
+    cd FileIntegrityMonitor/app/
     ```
 
 ### How to Run
