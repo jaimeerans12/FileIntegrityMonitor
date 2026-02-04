@@ -26,5 +26,21 @@ A security tool developed in Python to monitor and detect unauthorized modificat
 
 ## 1. Project Overview
 
+**Sentinel-FIM** is a lightweight File Integrity Monitor (FIM) built in Python. This tool is designed to serve as a security utility that snapshots the "state" of a local directory and alerts the user to any unauthorized changes. 
+
+In the context of **Product Security**, maintaining the integrity of source code and configuration files is paramount. This project demonstrates how automated auditing can detect the early stages of a system compromise, such as the injection of a backdoor or the modification of sensitive environment variables.
+
+### The Problem
+When a system is breached, attackers often modify existing files or drop malicious scripts into the file system. Without an automated integrity check, these changes can go unnoticed for months. Manual verification is impossible for large-scale projects, creating a need for a programmatic "source of truth."
+
+### The Solution
+Sentinel-FIM solves this by utilizing cryptographic hashing to create a unique "fingerprint" for every file within a target folder. By comparing these fingerprints over time, the tool can precisely identify:
+* **Integrity Violations:** Existing files that have been modified (even by a single bit).
+* **Unauthorized Additions:** New, unknown files that have appeared in the directory.
+* **Data Loss:** Files that were present in the baseline but have since been deleted.
+
+### Target Environment
+While cross-platform by design, this tool was developed and tested on **macOS**, focusing on handling Unix-based file structures and system-specific edge cases (such as handling `.DS_Store` metadata files).
+
 ## 2. Security Objectives
 [Explain why File Integrity Monitoring is used in Product Security to catch malware or unauthorized configuration changes.]
