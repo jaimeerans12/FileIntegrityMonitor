@@ -13,12 +13,14 @@ A security tool developed in Python to monitor and detect unauthorized modificat
     * 3.2 [Data Persistence](#32-data-persistence)
     * 3.3 [System-Specific Considerations (macOS)](#33-system-specific-considerations-macos)
 4. [How It Works](#4-how-it-works)
-    * 4.1 [Baseline Mode](#41-baseline-mode)
-    * 4.2 [Monitor Mode](#42-monitor-mode)
+    * 4.1 [Architecture: Manager vs. Target](#41-architecture-manager-vs-target)
+    * 4.2 [Baseline Mode](#42-baseline-mode)
+    * 4.3 [Monitor Mode](#43-monitor-mode)
 5. [Logic Flowchart](#5-logic-flowchart)
 6. [Challenges & Edge Cases](#6-challenges--edge-cases)
-    * 6.1 [macOS System Files (.DS_Store)](#61-macos-system-files-ds_store)
-    * 6.2 [Permission Handling](#62-permission-handling)
+    * 6.1 [The Recursion Bug](#61-the-recursion-bug)
+    * 6.2 [macOS Metadata](#62-macos-metadata)
+    * 6.3 [Memory Management](#63-memory-management)
 7. [Installation & Usage](#7-installation--usage)
 
 ---
@@ -73,7 +75,7 @@ Sentinel-FIM is built to be lightweight and dependency-free, relying on Python's
 ### 3.2 Data Flow & Storage
 
 1.  **Baseline Generation:**
-    The tool recursively scans the target directory using a Depth-First Search (DFS) approach. It computes the SHA-256 hash of every file and stores the `filepath:hash` key-value pairs in a local database (e.g., `baseline.txt` or `.json`).
+    The tool recursively scans the target directory using a Depth-First Search (DFS) approach. It computes the SHA-256 hash of every file and stores the `filepath:hash` key-value pairs in a local database (e.g., `baseline.json`).
     
 2.  **Monitoring Logic:**
     During the monitoring phase, the tool rescans the directory and compares the current state against the stored baseline.
@@ -88,25 +90,25 @@ Sentinel-FIM is built to be lightweight and dependency-free, relying on Python's
 
 ## 4. How It Works
 
-Sentinel-FIM operates in two distinct modes, mimicking the workflow of enterprise security tools like Tripwire or OSSEC in a simple educational version.
+Sentinel-FIM operates on a "Trust-But-Verify" model, utilizing a split-architecture approach. The **Security Tool** and its **Database** (`baseline.json`) are kept separate from the **Target Directory** being monitored.
 
-### 4.1 Baseline Mode (Initialization)
-This mode is designed to be run when the system is in a **"Known Good State"** (e.g., immediately after a fresh install or a verified deployment).
+### 4.1 Architecture: Manager vs. Target
+* **The Manager (Local):** The script (`sentinel.py`) runs from a secure location. It generates and stores the `baseline.json` file in its own directory.
+* **The Target (Remote/External):** The script accepts a directory path as an argument. It scans this target folder but **never writes data to it**.
 
-1.  **Traversal:** The script uses `os.walk()` to crawl the target directory tree.
-2.  **Fingerprinting:** For every file found (excluding those in the ignore list), the engine calculates a SHA-256 hash.
-3.  **Serialization:** These path-hash pairs are stored in a dictionary and exported to `baseline.json`.
-    * *Security Note:* This file acts as the "Golden Image." Any future deviation from this file is considered an anomaly.
+### 4.2 Baseline Mode (Initialization)
+1.  **Input:** User provides a target directory path (e.g., `/var/www/html`).
+2.  **Traversal:** The script crawls the target folder.
+3.  **Hashing:** It calculates SHA-256 hashes for all valid files.
+4.  **Storage:** The file signatures are saved to `baseline.json` in the *script's* directory, ensuring the target environment remains untouched.
 
-### 4.2 Monitor Mode (Verification)
-This mode is the auditing phase. It answers the question: *"Has anything changed since the baseline was created?"*
-
-1.  **Re-Scanning:** The script performs a fresh scan of the directory, calculating new hashes for all current files.
-2.  **Comparison Logic:** It compares the "Current State" against the loaded "Baseline."
-3.  **Alerting:**
-    * **[MODIFIED]:** The file exists in both states, but the hashes differ. (Critical: potential tampering).
-    * **[NEW]:** A file exists now that was not in the baseline. (Warning: potential malware drop or unauthorized script).
-    * **[DELETED]:** A file was in the baseline but is missing now. (Warning: potential data loss or cleanup attempt).
+### 4.3 Monitor Mode (Verification)
+1.  **Loading:** The script loads the trusted signatures from the local `baseline.json`.
+2.  **Scanning:** It re-scans the target directory to capture the current state.
+3.  **Comparison:** It compares the live file system against the stored records to detect:
+    * **[MODIFIED]:** Content changes (Integrity violation).
+    * **[NEW]:** Unauthorized file additions (Intrusion attempt).
+    * **[DELETED]:** Missing files (Availability issue).
 
 ## 5. Logic Flowchart
 
@@ -140,8 +142,9 @@ graph TD
 During the development of Sentinel-FIM, several engineering challenges were addressed to ensure reliability and prevent false positives.
 
 ### 6.1 The "Recursion" Bug
-**The Issue:** Early versions of the tool would save `baseline.json` inside the target directory. On the next scan, the tool would detect `baseline.json` as a "New File," creating a new hash for it, which would modify the file again, leading to an infinite loop of alerts.
-**The Fix:** Added an internal **Ignore List** that explicitly excludes the tool's own configuration files (`baseline.json`, `sentinel.py`) from the hashing process.
+**The Issue:** If a security tool saves its database inside the folder it is monitoring, it detects the database change as a "Security Alert," triggering an infinite loop of alerts.
+**The Fix:** 1. **Architectural Separation:** The tool now saves `baseline.json` in the execution directory, completely outside the target directory. 
+2. **Ignore List:** An internal filter explicitly ignores `baseline.json`, `sentinel.py`, and `.DS_Store` to prevent self-hashing if the tool is accidentally run inside the target folder.
 
 ### 6.2 OS-Specific Metadata (.DS_Store)
 **The Issue:** On macOS, the Finder creates hidden `.DS_Store` files to store folder view settings (icon position, window size). These files change frequently based on user interaction, not security events.
@@ -170,6 +173,27 @@ Sentinel-FIM is designed to be plug-and-play. It relies on the Python Standard L
     ```
 
 ### How to Run
-Execute the script directly using Python:
+The script requires a **Target Directory** argument.
+
+**Syntax:**
 ```bash
-python3 sentinel.py
+python3 sentinel.py <path_to_target_folder>
+```
+
+**Example:**
+```bash
+# Monitor a specific project folder
+python3 sentinel.py /Users/myname/Documents/MyProject
+```
+
+### Modes of Operation
+After running the command, use the interactive menu:
+
+* **Mode 1: Initialize Baseline**
+    * Scans the target path.
+    * Saves `baseline.json` in your current folder (where the script is).
+    * *Use this when the target is in a "Known Good State".*
+
+* **Mode 2: Run Integrity Check**
+    * Compares the current state of the target path against your local `baseline.json`.
+    * Alerts on any discrepancies.
