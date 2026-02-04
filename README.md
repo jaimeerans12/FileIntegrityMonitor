@@ -43,4 +43,17 @@ Sentinel-FIM solves this by utilizing cryptographic hashing to create a unique "
 While cross-platform by design, this tool was developed and tested on **macOS**, focusing on handling Unix-based file structures and system-specific edge cases (such as handling `.DS_Store` metadata files).
 
 ## 2. Security Objectives
-[Explain why File Integrity Monitoring is used in Product Security to catch malware or unauthorized configuration changes.]
+
+The development of Sentinel-FIM is centered around the **CIA Triad** (Confidentiality, Integrity, and Availability), specifically focusing on the **Integrity** pillar. The project aims to achieve the following security goals:
+
+### 🛡️ Data Integrity Verification
+The primary objective is to ensure that "Data at Rest" has not been tampered with. By using cryptographic hashes, the tool provides a mathematical guarantee that a file's content is identical to its original "known-good" state.
+
+### 🔍 Detection of "Living off the Land" Attacks
+Modern attackers often use legitimate system tools or modify existing scripts to stay hidden. Sentinel-FIM is designed to detect these subtle changes in source code or configuration files that traditional antivirus or signature-based scanners might overlook.
+
+### 📉 Reducing Mean Time to Detect (MTTD)
+In security engineering, the goal is to discover a breach as quickly as possible. This tool automates the audit process, allowing for rapid detection of file-level changes that would take a human developer hours to find manually.
+
+### 🛠️ Software Supply Chain Security
+This project explores how developers can verify that their build environment remains "clean." By baseline-testing a project directory before a deployment, we ensure that no malicious artifacts or "extra" files have been injected into the software lifecycle.
