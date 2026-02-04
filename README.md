@@ -109,3 +109,29 @@ This mode is the auditing phase. It answers the question: *"Has anything changed
     * **[MODIFIED]:** The file exists in both states, but the hashes differ. (Critical: potential tampering).
     * **[NEW]:** A file exists now that was not in the baseline. (Warning: potential malware drop or unauthorized script).
     * **[DELETED]:** A file was in the baseline but is missing now. (Warning: potential data loss or cleanup attempt).
+
+## 5. Logic Flowchart
+
+The following diagram illustrates the control flow of the Sentinel-FIM application, detailing the decision process between Initialization and Monitoring.
+
+```mermaid
+graph TD
+    A[Start Program] --> B{Select Mode}
+    
+    %% Path 1: Baseline Creation
+    B -- Mode 1: Init --> C[Scan Directory]
+    C --> D[Calculate SHA-256 Hashes]
+    D --> E[Exclude Ignore List]
+    E --> F[Save to baseline.json]
+    F --> G[End]
+
+    %% Path 2: Integrity Check
+    B -- Mode 2: Monitor --> H[Load baseline.json]
+    H --> I[Scan Directory & Hash]
+    I --> J{Compare Hashes}
+    
+    %% Comparison Logic
+    J -- Match --> K[System Secure]
+    J -- Mismatch --> L[ALERT: Modified]
+    J -- New File --> M[ALERT: New File]
+    J -- Missing --> N[ALERT: Deleted]
